@@ -29,9 +29,10 @@
 
 */
 
+#include "circular_array.hpp"
 
 template<class VisLib, class Polly>
-class fit_to_lanes
+class fit_to_lanes: public circular_array<typename VisLib::real>
 {
 public:
     typedef VisLib lib;
@@ -43,14 +44,17 @@ public:
     typedef typename lib::vector_i vector_i;
     typedef typename lib::vector_r vector_r;  
     typedef typename lib::pixel pixel;
-    
-    fit_to_lanes(lib* lib_ref_, polly* polly_ref_left_, polly* polly_ref_right_, int number_of_windows_vertical_, int window_horizontal_, int window_points_threshold_):
+    typedef circular_array<real> circ_array;
+
+
+    fit_to_lanes(lib* lib_ref_, polly* polly_ref_left_, polly* polly_ref_right_, int number_of_windows_vertical_, int window_horizontal_, int window_points_threshold_, int avaraging_length_):
     number_of_windows_vertical(number_of_windows_vertical_),
     window_horizontal(window_horizontal_),
     window_points_threshold(window_points_threshold_),
     lib_ref(lib_ref_),
     polly_ref_left(polly_ref_left_),
-    polly_ref_right(polly_ref_right_)
+    polly_ref_right(polly_ref_right_),
+    avaraging_length(avaraging_length_)
     {
         hist = new histogram(*this);
         hist_points_left.resize(number_of_windows_vertical);
@@ -74,14 +78,9 @@ public:
 
         window_vertical = sum_size/number_of_windows_vertical;
         
-        //TODO: select avaraging! This is a temp hack! It should be intelectual!
-        int critical_size = std::max<int>(5000, sum_size*hist_size);
+        //int critical_size = std::max<int>(avaraging_length, sum_size*hist_size);
+        int critical_size = avaraging_length;
 
-        if((counter_left>0.9*critical_size)||(counter_right>0.9*critical_size))
-        {
-            counter_left = 0;
-            counter_right = 0;
-        }
         //TODO: possibly use better memory optimization
         if((x_points_left.size()==0)||(x_points_left.size()<critical_size))
         {
@@ -103,13 +102,14 @@ public:
 
         for(int j=0;j<number_of_windows_vertical;j++)
         {
-            window(original_image, hist_points_left[j], x_points_left, y_points_left, counter_left);
-            window(original_image, hist_points_right[j], x_points_right, y_points_right, counter_right);
+            window(original_image, hist_points_left[j], x_points_left, y_points_left);
+            window(original_image, hist_points_right[j], x_points_right, y_points_right);
         }
 
-        polly_ref_left->fit(counter_left, y_points_left, x_points_left);
-        polly_ref_right->fit(counter_right, y_points_right, x_points_right);
-      
+        
+        polly_ref_left->fit(critical_size, y_points_left, x_points_left);
+        polly_ref_right->fit(critical_size, y_points_right, x_points_right);
+
         apply_detected_lanes(original_image);
 
     }
@@ -263,7 +263,7 @@ private:
     }
 
 
-    void window(const image& original_image, point_i& hist_points, std::vector<real>& x_points, std::vector<real>& y_points, int& counter)
+    void window(const image& original_image, point_i& hist_points, circ_array& x_points, circ_array& y_points)
     {
         int center_horizontal = hist_points.y;
         int center_vertical = hist_points.x;
@@ -282,9 +282,8 @@ private:
                     unsigned char val = lib_ref->read_image_value_uchar(original_image, k, j);
                     if(val>(unsigned char)window_points_threshold)           
                     {
-                        x_points[counter]=real(j);
-                        y_points[counter]=real(k);
-                        counter++;
+                        x_points.push(real(j));
+                        y_points.push(real(k));
                     }
 
                 }
@@ -332,6 +331,7 @@ private:
     int sum_size;
     int counter_left = 0;
     int counter_right = 0;
+    int avaraging_length;
 
     lib *lib_ref;
     polly *polly_ref_left;
@@ -340,10 +340,10 @@ private:
     std::vector<point_i> hist_points_left;
     std::vector<point_i> hist_points_right;
 
-    std::vector<real> x_points_left;
-    std::vector<real> y_points_left;
-    std::vector<real> x_points_right;
-    std::vector<real> y_points_right;
+    circ_array x_points_left;
+    circ_array y_points_left;
+    circ_array x_points_right;
+    circ_array y_points_right;
 
 
     image return_image;

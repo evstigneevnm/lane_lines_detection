@@ -29,6 +29,7 @@
 #include "video_capture.hpp"
 #include "select_transform_roi.hpp"
 
+
 int main(int argc, char const *argv[])
 {
     //typedef types and library wrap
@@ -48,13 +49,13 @@ int main(int argc, char const *argv[])
     typedef fit_to_lanes<visual_library, poly_library> lanes_library;
     typedef video_capture<visual_library> video_library;
     typedef select_transform_roi<visual_library, projector_library, poly_library> roi_library;
-    
+
     //define classes
     visual_library library;
     projector_library proj(&library);
     poly_library poly_left; //x0, q0
     poly_library poly_right; //x0, q0
-    lanes_library lanes(&library, &poly_left, &poly_right, 10, 20, 150); // number of vertical windows, horizonatal window width, pixel threshold
+    lanes_library lanes(&library, &poly_left, &poly_right, 10, 20, 150, 5000); // number of vertical windows, horizonatal window width, pixel threshold, number of avaraging points
     filters_library filters(&library);
     video_library video(&library);
     roi_library roi(&library, &proj, &poly_left, &poly_right, 0.85, 10);
@@ -87,10 +88,19 @@ int main(int argc, char const *argv[])
     vector_i roi_corners;
     vector_i roi_corners_mapped(4);
 
-    roi_corners.push_back(point_i( 67, 340 ));
-    roi_corners.push_back(point_i( 273, 224 ));
-    roi_corners.push_back(point_i( 363, 224 ));
-    roi_corners.push_back(point_i( 621, 340 ));
+    // roi_corners.push_back(point_i( 67, 340 ));
+    // roi_corners.push_back(point_i( 273, 224 ));
+    // roi_corners.push_back(point_i( 363, 224 ));
+    // roi_corners.push_back(point_i( 621, 340 ));
+// [60, 350;
+//  281, 168;
+//  342, 168;
+//  599, 353]
+    roi_corners.push_back(point_i( 60, 350 ));
+    roi_corners.push_back(point_i( 280, 170 ));
+    roi_corners.push_back(point_i( 340, 170 ));
+    roi_corners.push_back(point_i( 600, 350 ));
+
 
     filters.set_image_size(window_width, window_height);
     roi.set_roi_domain(roi_corners);

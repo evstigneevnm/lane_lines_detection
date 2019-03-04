@@ -58,6 +58,7 @@ public:
         roi_cooridnates=initial_coords_;
         transformed_roi_cooridnates.resize(4);
     }
+
     select_transform_roi(lib* lib_ref_, project* proj_ref_, polly* polly_ref_left_, polly* polly_ref_right_, real factor_, int number_of_result_points_):
     lib_ref(lib_ref_),
     proj_ref(proj_ref_),
@@ -103,7 +104,7 @@ public:
             construct_transformed_roi_cooridnates(original_image_cols, original_image_rows);
             proj_ref->define_homography(roi_cooridnates, transformed_roi_cooridnates);
             validation_needed = false;
-            
+            printf_coords();
             
         }
         roi_ = transformed_roi_cooridnates;        
@@ -176,6 +177,10 @@ private:
     static int selected_corner_index;
     static bool validation_needed;
 
+    void printf_coords()
+    {
+        std::cout << roi_cooridnates << std::endl;
+    }
 
     void display_roi(image& image_origin)
     {
