@@ -45,6 +45,7 @@ public:
     typedef typename lib::vector_i vector_i;
     typedef typename lib::vector_r vector_r; 
     typedef typename lib::pixel pixel;
+    typedef typename lib::pixel_i pixel_i;
 
     image_filters(lib* lib_ref_, int original_image_rows_, int original_image_cols_):
     lib_ref(lib_ref_),
@@ -102,6 +103,21 @@ public:
         lib_ref->threshold(image_wrap_1, output_image,  threshold_1, 255);
     }
 
+    void apply_filters_chenel(const image& input_image, image& output_image)
+    {
+
+        image image_wrap_1, frame_threshold;
+        
+        pixel_i lower_white = pixel_i(135,135,135);
+        pixel_i upper_white = pixel_i(255,255,255);
+
+        lib_ref->in_range(input_image, lower_white, upper_white, image_wrap_1);
+        //lib_ref->gaussian_blur(image_wrap_1, output_image, 3, 3, 2.0);
+        lib_ref->median_blur(image_wrap_1, output_image, 3);
+        lib_ref->gaussian_blur(output_image, image_wrap_1, 3, 3, 1.0);
+        lib_ref->sobel(image_wrap_1, output_image, 1, 0, 3);
+        //lib_ref->threshold(image_wrap_1, output_image,  threshold_1, 255);
+    }
 
 private:
     lib* lib_ref;

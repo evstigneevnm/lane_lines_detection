@@ -50,6 +50,7 @@ public:
     typedef std::vector<point_i> vector_i;
     typedef std::vector<point_r> vector_r;
     typedef cv::Scalar_<T> pixel; //Scalar (blue_ component, green_ component, red_ component, alpha_ component)
+    typedef cv::Scalar pixel_i;
     typedef cv::VideoCapture video_stream;
     typedef cv::Rect rectangle;
 
@@ -193,6 +194,10 @@ public:
         cv::Size kernel_size = cv::Size(kernel_width, kernel_height);
         cv::GaussianBlur((cv::InputArray) src, (cv::OutputArray) dst, kernel_size, sigmaX, sigmaY, borderType);
     }
+    void median_blur(const image& src, image& dst, int kernel_width = 3)
+    {
+        cv::medianBlur(src, dst, kernel_width);
+    }
 
     void sobel(const image& src, image& dst, int dx, int dy, int kernel_size=3, int ddepth=-1, double scale=1, double delta=0, int borderType = cv::BORDER_REPLICATE  )
     {
@@ -253,6 +258,11 @@ public:
     void line(const image& image_origin, const point_i& point_1, const point_i& point_2, const pixel& color, int thickness)
     {
         cv::line(image_origin, point_1, point_2, color, thickness);
+    }
+
+    void in_range(const image& input_image, const pixel_i& lower_, const pixel_i& upper_, image& output_image)
+    {
+        cv::inRange(input_image, lower_, upper_, output_image);
     }
 
 };

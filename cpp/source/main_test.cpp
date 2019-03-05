@@ -55,7 +55,7 @@ int main(int argc, char const *argv[])
     projector_library proj(&library);
     poly_library poly_left; //x0, q0
     poly_library poly_right; //x0, q0
-    lanes_library lanes(&library, &poly_left, &poly_right, 10, 20, 150, 5000); // number of vertical windows, horizonatal window width, pixel threshold, number of avaraging points
+    lanes_library lanes(&library, &poly_left, &poly_right, 10, 20, 150, 8000); // number of vertical windows, horizonatal window width, pixel threshold, number of avaraging points
     filters_library filters(&library);
     video_library video(&library);
     roi_library roi(&library, &proj, &poly_left, &poly_right, 0.85, 10);
@@ -81,8 +81,8 @@ int main(int argc, char const *argv[])
     library.create_window(window_result);
     roi.set_mouse_callback(window_origin);
 
-
-    image image_origin, image_origin_grey, image_origin_marked, image_roi, image_roi_filtered, image_result;
+    //all images
+    image image_origin, image_origin_grey, image_origin_marked, image_roi, image_roi_filtered, image_result, image_origin_color, image_video;
 
     //this should be configured externally!
     vector_i roi_corners;
@@ -108,6 +108,12 @@ int main(int argc, char const *argv[])
 
 
     bool play_video = true;
+/*
+//    for video output:
+
+    cv::VideoWriter video_out("out_vid_lane_detection.avi", CV_FOURCC('M','J','P','G'),50, cv::Size(2*window_width,window_height));
+*/
+
     while(true)
     {
     
@@ -117,18 +123,27 @@ int main(int argc, char const *argv[])
             {
                 video.set_begining();
                 video.read(image_origin);
+//                break;
             }
         }
 
+        
+
         library.resize(image_origin, window_width, window_height);
         library.copy_image(image_origin, image_origin_marked);
-        library.grb_to_gray(image_origin, image_origin_grey );
+        
+        library.copy_image(image_origin, image_origin_color);
+        //library.grb_to_gray(image_origin, image_origin_grey );
 
         roi.apply_roi(roi_corners_mapped, image_origin_marked);
-        roi.map_roi(image_origin_grey, image_roi);
+        roi.map_roi(image_origin_color, image_roi);
+        //roi.map_roi(image_origin_grey, image_roi);
+        
         
         filters.set_region_of_interest(roi_corners_mapped);
-        filters.apply_filters(image_roi, image_roi_filtered);
+        filters.apply_filters_chenel(image_roi, image_roi_filtered);
+        //filters.apply_filters(image_roi, image_roi_filtered);
+        
 
         lanes.construct_lanes(image_roi_filtered);
 
@@ -137,20 +152,29 @@ int main(int argc, char const *argv[])
         library.show_image(window_origin, image_origin_marked);
         library.show_image(window_roi, image_roi_filtered);
         library.show_image(window_result, image_origin);
+/*
+//    for video output:
 
+        cv::hconcat(image_origin_marked,image_origin,image_video); //for video only, withought wrap
+        library.show_image(window_result, image_video);
 
+        video_out.write(image_video);
+*/
 
         char key = (char) library.wait_key(1);
         if((key == 'q')||(key == 27))
             break;
         else if (key == 'p')
             play_video = !play_video;
-        else if (key == 'r')
-            cv::imwrite( "roi.png", image_roi_filtered );
+
+
 
 
     }
-
+/*
+//    for video output:
+    video_out.release();
+*/
     
     library.close_all_windows();
     return 0;
